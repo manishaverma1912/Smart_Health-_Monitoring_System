@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Health Monitoring System</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root" class="min-h-screen bg-gray-100"></div>
+
+  <script type="text/babel">
+    // Health Analysis Component
+    const HealthAnalysis = ({ data }) => {
+      const analyzePatient = (patientData) => {
+        const result = {};
+
+        // Stats calculation (simplified for single patient data)
+        const hr_avg = patientData.heartRate;
+        const hr_max = patientData.heartRate; // Single data point, so max = value
+        const hr_std = 0; // Cannot compute std for single point
+
+        const sys_avg = patientData.systolic;
+        const dia_avg = patientData.diastolic;
+
+        const spO2_avg = patientData.spO2;
+        const spO2_min = patientData.spO2;
+
+        const sleep_avg = patientData.sleepDuration;
+        const sleep_std = 0; // Cannot compute std
+        const deep_avg = patientData.deepSleep;
+
+        const stress_avg = patientData.stressLevel;
+        const stress_max = patientData.stressLevel;
+
+        const resp_avg = patientData.respiratoryRate;
+        const ecg_irregular = patientData.ecg === 0;
+
+        // Gender and Menstrual Cycle check
+        const gender = patientData.gender;
+        const menstrual_cycle = patientData.menstrualCycle;
+        if (gender === 0 && menstrual_cycle === 1) {
+          result["Menstrual Cycle"] = "Error: Male patients cannot have a menstrual cycle";
+        } else if (gender === 1 && menstrual_cycle === 1) {
+          result["Menstrual Cycle"] = "Menstrual Cycle Present - Monitor for Regularity";
+        } else if (gender === 1 && menstrual_cycle === 0) {
+          result["Menstrual Cycle"] = "No Menstrual Cycle - Normal for Non-Menstruating Females";
+        } else if (gender === 0) {
+          result["Menstrual Cycle"] = "Not Applicable - Male Patient";
+        }
+
+        // Heart Rate conditions
+        if (hr_avg > 100 || hr_max > 110) {
+          result["Heart Rate"] = "Tachycardia Risk - Consult Cardiologist";
+        } else if (hr_avg < 60 && hr_std > 10) {
+          result["Heart Rate"] = "Bradycardia + Variability - Consult Cardiologist";
+        }
+
+        // Blood Pressure conditions
+        if (sys_avg > 130 || dia_avg > 85) {
+          result["BP"] = "Hypertension Risk - Consult Cardiologist Urgently";
+        } else if (sys_avg > 120) {
+          result["BP"] = "Prehypertension Risk - Consult Cardiologist";
+        }
+
+        // SpO2 conditions
+        if (spO2_avg < 95 || (spO2_min < 92 && resp_avg > 18)) {
+          result["SpO2"] = "Hypoxemia, Possible Sleep Apnea - Consult Pulmonologist";
+        }
+
+        // Sleep and Stress correlation
+        if (sleep_avg < 7 && sleep_std > 1.5) {
+          result["Sleep"] = "Sleep Deprivation + Inconsistency - Consult Sleep Specialist";
+        }
+        if (deep_avg < 1.2) {
+          result["Deep Sleep"] = "Poor Restorative Sleep - Consult Sleep Specialist";
+        }
+        if (stress_avg > 5 && stress_max > 8 && sleep_avg < 7) {
+          result["Stress"] = "Chronic Stress + Fatigue - Consult Psychologist";
+        }
+
+        // ECG considerations
+        if (ecg_irregular && hr_std > 10) {
+          result["ECG"] = "Arrhythmia Risk (High Variability) - Consult Cardiologist Urgently";
+        }
+
+        return result;
+      };
+
+      const analysis = analyzePatient(data);
+      return (
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold text-gray-800">Health Analysis</h2>
+          {Object.keys(analysis).length > 0 ? (
+            <ul className="list-disc pl-5 text-gray-700 mt-2">
+              {Object.entries(analysis).map(([param, pred]) => (
+                <li key={param} className="mb-1">{param}: {pred}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-600 mt-2">No significant health alerts detected.</p>
+          )}
+        </div>
+      );
+    };
+
+    // Prediction Component (Simulated Logistic Regression)
+    const Prediction = ({ data }) => {
+      const predictMenstrualCycle = (input) => {
+        // If male, menstrual cycle is always 0
+        if (input.gender === 0) {
+          return 0;
+        }
+
+        // Simplified Logistic Regression with placeholder coefficients
+        const weights = {
+          heartRate: 0.02,
+          systolic: 0.01,
+          diastolic: 0.01,
+          spO2: -0.03,
+          stepsCount: -0.0001,
+          stressLevel: 0.05,
+          ecg: -0.1,
+          gender: 0.5 // Positive weight since only females can have menstrual cycle
+        };
+        const bias = -1.5;
+        const z = (
+          weights.heartRate * input.heartRate +
+          weights.systolic * input.systolic +
+          weights.diastolic * input.diastolic +
+          weights.spO2 * input.spO2 +
+          weights.stepsCount * input.stepsCount +
+          weights.stressLevel * input.stressLevel +
+          weights.ecg * input.ecg +
+          weights.gender * input.gender +
+          bias
+        );
+        const probability = 1 / (1 + Math.exp(-z));
+        return probability > 0.5 ? 1 : 0;
+      };
+
+      const prediction = predictMenstrualCycle(data);
+      return (
+        <div className="mt-6">
+          <h2 className="text-xl font-semibold text-gray-800">Menstrual Cycle Prediction</h2>
+          <p className="text-gray-700 mt-2">
+            {data.gender === 0
+              ? "Not Applicable - Male Patient"
+              : prediction === 1
+              ? "Likely in Menstrual Cycle"
+              : "Not in Menstrual Cycle"}
+          </p>
+        </div>
+      );
+    };
+
+    // Main App Component
+    const App = () => {
+      const [healthData, setHealthData] = React.useState({
+        heartRate: 71,
+        systolic: 138,
+        diastolic: 93,
+        spO2: 95,
+        sleepDuration: 7.5,
+        deepSleep: 1.2,
+        stepsCount: 6922,
+        stressLevel: 8,
+        respiratoryRate: 16,
+        ecg: 1,
+        menstrualCycle: 1,
+        gender: 1 // Female by default
+      });
+
+      const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setHealthData((prev) => {
+          // If gender is male (0), force menstrualCycle to 0
+          if (name === "gender" && value === "0") {
+            return { ...prev, [name]: parseInt(value), menstrualCycle: 0 };
+          }
+          return { ...prev, [name]: name === "gender" || name === "ecg" || name === "menstrualCycle" ? parseInt(value) : parseFloat(value) || 0 };
+        });
+      };
+
+      return (
+        <div className="container mx-auto p-6 max-w-3xl">
+          <h1 className="text-3xl font-bold text-center text-blue-600 mb-6">
+            Smart Health Monitoring System
+          </h1>
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">Input Health Metrics</h2>
+            <div className="grid grid-cols-2 gap-4">
+              {Object.keys(healthData).map((key) => (
+                <div key={key} className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-600 capitalize">
+                    {key.replace(/([A-Z])/g, " $1").toLowerCase()}
+                  </label>
+                  {key === "gender" ? (
+                    <select
+                      name="gender"
+                      value={healthData.gender}
+                      onChange={handleInputChange}
+                      className="mt-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="0">Male</option>
+                      <option value="1">Female</option>
+                    </select>
+                  ) : key === "ecg" || key === "menstrualCycle" ? (
+                    <select
+                      name={key}
+                      value={healthData[key]}
+                      onChange={handleInputChange}
+                      className="mt-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={key === "menstrualCycle" && healthData.gender === 0}
+                    >
+                      <option value="0">{key === "ecg" ? "Irregular" : "No"}</option>
+                      <option value="1">{key === "ecg" ? "Normal" : "Yes"}</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="number"
+                      name={key}
+                      value={healthData[key]}
+                      onChange={handleInputChange}
+                      className="mt-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      step={key.includes("Sleep") || key === "respiratoryRate" ? "0.1" : "1"}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <Prediction data={healthData} />
+            <HealthAnalysis data={healthData} />
+            <p className="mt-4 text-sm text-gray-500">
+              Note: This is a simplified demo. Consult a healthcare professional for accurate diagnosis.
+            </p>
+          </div>
+        </div>
+      );
+    };
+
+    // Render the app
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
