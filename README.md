@@ -101,4 +101,4 @@ The dataset is preprocessed to split blood pressure into systolic and diastolic 
 - Enhance the UI with interactive charts using Recharts or similar libraries.
 
 ## Contact
-For questions or contributions, please contact nancydwivedi1234@gmail.com or open an issue on the repository.
+For questions or contributions, please contact manishachandravanshi9919@gmail.com or open an issue on the repository.
